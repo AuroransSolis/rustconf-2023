@@ -1,0 +1,13 @@
+error: error parsing `for` bound lifetime: invalid lifetime `<`. caller: `$callback`
+  --> tests/fail/where_clause_lt_emptylt.rs:1:1
+   |
+1  | / trait_xml::trait_xml! {
+2  | |     <trait>
+3  | |         <name>LifetimeClauseTest</name>
+4  | |         <bounds>
+...  |
+20 | |     </trait>
+21 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `$crate::trait_xml_parse_lifetime_clause` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

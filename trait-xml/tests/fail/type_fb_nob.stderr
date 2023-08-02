@@ -1,0 +1,13 @@
+error: error parsing `for` bound: no bound provided. caller: `::trait_xml::trait_xml_parse_type`
+  --> tests/fail/type_fb_nob.rs:1:1
+   |
+1  | / trait_xml::trait_xml! {
+2  | |     <trait>
+3  | |         <name>Foo</name>
+4  | |         <bounds>
+...  |
+12 | |     </trait>
+13 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `$crate::trait_xml_parse_for_bound` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

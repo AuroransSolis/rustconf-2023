@@ -1,0 +1,13 @@
+error: error parsing supertrait: empty path. caller: `::trait_xml::trait_xml_parse_bounds`
+ --> tests/fail/supertrait_empty.rs:1:1
+  |
+1 | / trait_xml::trait_xml! {
+2 | |     <trait>
+3 | |         <name>Foo</name>
+4 | |         <bounds>
+... |
+7 | |     </trait>
+8 | | }
+  | |_^
+  |
+  = note: this error originates in the macro `$crate::trait_xml_parse_supertrait` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

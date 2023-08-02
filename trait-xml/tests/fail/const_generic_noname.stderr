@@ -1,0 +1,13 @@
+error: error parsing const generic parameter: missing name. provided type: `u8`, caller: `::trait_xml::trait_xml_parse_bounds`
+  --> tests/fail/const_generic_noname.rs:1:1
+   |
+1  | / trait_xml::trait_xml! {
+2  | |     <trait>
+3  | |         <name>Foo</name>
+4  | |         <bounds>
+...  |
+9  | |     </trait>
+10 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `$crate::trait_xml_parse_const_generic` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

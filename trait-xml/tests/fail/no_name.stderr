@@ -1,0 +1,9 @@
+error: error expanding trait: no name provided.
+ --> tests/fail/no_name.rs:1:1
+  |
+1 | / trait_xml::trait_xml! {
+2 | |     <trait></trait>
+3 | | }
+  | |_^
+  |
+  = note: this error originates in the macro `$crate::trait_xml_inner` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

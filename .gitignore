@@ -1,0 +1,14 @@
+.stfolder/
+**/target/
+**/Cargo.lock
+presentation/_minted-main
+presentation/*.aux
+presentation/*.bcf
+presentation/*.log
+presentation/*.nav
+presentation/*.out
+presentation/*.run.xml
+presentation/*.snm
+presentation/*.synctex.gz
+presentation/*.toc
+presentation/*.vrb

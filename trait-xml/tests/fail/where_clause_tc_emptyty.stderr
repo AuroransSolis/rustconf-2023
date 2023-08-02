@@ -1,0 +1,13 @@
+error: error parsing type: empty type tags. caller: `::trait_xml::trait_xml_parse_type_clause`
+  --> tests/fail/where_clause_tc_emptyty.rs:1:1
+   |
+1  | / trait_xml::trait_xml! {
+2  | |     <trait>
+3  | |         <name>Foo</name>
+4  | |         <bounds>
+...  |
+16 | |     </trait>
+17 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `$crate::trait_xml_parse_type_ty` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,0 +1,13 @@
+error: error parsing `for` clause: no bound provided. caller: `::trait_xml::trait_xml_parse_where`
+  --> tests/fail/where_clause_fc_nob.rs:1:1
+   |
+1  | / trait_xml::trait_xml! {
+2  | |     <trait>
+3  | |         <name>Foo</name>
+4  | |         <bounds>
+...  |
+14 | |     </trait>
+15 | | }
+   | |_^
+   |
+   = note: this error originates in the macro `$crate::trait_xml_parse_for_clause` which comes from the expansion of the macro `trait_xml::trait_xml` (in Nightly builds, run with -Z macro-backtrace for more info)
