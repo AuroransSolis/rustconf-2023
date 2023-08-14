@@ -12,3 +12,4 @@ presentation/*.snm
 presentation/*.synctex.gz
 presentation/*.toc
 presentation/*.vrb
+presentation/svg-inkscape

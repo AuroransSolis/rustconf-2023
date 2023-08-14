@@ -7,6 +7,7 @@
 \usepackage{hyperref}
 \usepackage{iftex}
 \usepackage{minted}
+\usepackage{svg}
 \usepackage{tabularray}
 \usepackage{tikz}
 \usepackage{ulem}
@@ -51,21 +52,14 @@
 
 % Minted
 \setminted{
-	%bgcolor = black,
-	%bgcolor = main,
 	bgcolor = lightergrey,
 	fontfamily = JetBrains Mono,
 	fontsize = \tiny,
-	%highlightcolor = blue1,
 	highlightcolor = blue9,
 	linenos = true,
 	tabsize = 4,
-	%frame = leftline,
-	%framesep = 2mm,
 	numberblanklines = true,
-	%numbersep = 12pt,
 	numbersep = 2pt,
-	%samepage = false,
 }
 \usemintedstyle{default}
 
@@ -109,9 +103,156 @@
 		\maketitle
 	\end{frame}
 
-	\begin{frame}{Materials}
-		The materials for this talk are available on GitHub and GitLab at
-		\texttt{AuroransSolis/rustconf-2023.git}.
+	\section*{The Horrors}
+	\begin{frame}{(:}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-1.svg}
+	\end{frame}
+
+	\begin{frame}{???}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-2.svg}
+	\end{frame}
+
+	\begin{frame}{!!!}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-3.svg}
+	\end{frame}
+
+	\begin{frame}{(:<}
+		It's not snacktime anymore. It's crimetime.
+
+		\pause
+
+		We're going to define traits using XML.
+	\end{frame}
+
+	\subsection{Start of the evil arc}
+	\begin{frame}[fragile]{(:<}
+		We're going to take this trait:
+
+		\begin{minted}[autogobble]{rust}
+			pub trait Foo<const BAR: usize>: Baz {
+				type Baq: Qux;
+				const QUUX: Self::Baq;
+				fn corge<Grault, Garply>(waldo: Grault) -> Garply;
+			}
+		\end{minted}
+	\end{frame}
+
+	\begin{frame}[fragile]{(:<}
+		And turn it into this XML:
+		\begin{center}
+			\begin{minipage}{0.45\linewidth}
+				\begin{minted}[autogobble]{xml}
+					<trait>
+						<name>Foo</name>
+						<vis>pub</vis>
+						<bounds>
+							<const>
+								<name>BAR</name>
+								<type>usize</type>
+							</const>
+							<req>Baz</req>
+						</bounds>
+						<assoctype>
+							<name>Baq</name>
+							<bounds>
+								<req>Qux</req>
+							</bounds>
+						</assoctype>
+						<assocconst>
+							<name>QUUX</name>
+							<type>Self::Baq</type>
+						</assocconst>
+				\end{minted}
+			\end{minipage}
+			\hfill
+			\begin{minipage}{0.45\linewidth}
+				\begin{minted}[autogobble, firstnumber = 21]{xml}
+						<assocfn>
+							<name>corge</name>
+							<bounds>
+								<type>
+									<name>Grault</name>
+								</type>
+								<type>
+									<name>Garply</name>
+								</type>
+							</bounds>
+							<args>
+								<arg>
+									<name>waldo</name>
+									<type>Grault</type>
+								</arg>
+							</args>
+							<ret>Garply</ret>
+						</assocfn>
+					</trait>
+				\end{minted}
+			\end{minipage}
+		\end{center}
+
+		\pause
+
+		If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent question.
+		\pause I will not answer it.
+	\end{frame}
+
+	\subsection{what}
+	\begin{frame}{auro no please stop}
+		See the better question is, ``Ooh, how did you do that?'' \\
+
+		\pause
+
+		Let's take a look, shall we?
+	\end{frame}
+
+	\begin{frame}
+		These are the places we'll look at:
+
+		\small
+		\begin{itemize}
+			\item Internal rules:
+			\begin{itemize}
+				\item \path{trait_xml_macro.rs:9}, \path{trait_xml_macro.rs:37}
+				\item \path{assoc_fn.rs:1618}, \path{assoc_fn.rs:1649}, \path{assoc_fn.rs:1680},
+				\path{assoc_fn.rs:1711}
+			\end{itemize}
+			\pause
+			\item Incremental TT muncher: \path{vis.rs:58}
+			\pause
+			\item Push-down accumulation: \path{type_ty.rs:116}
+			\pause
+			\item TT bundling (and unbundling): \path{assoc_type.rs:88},
+			\path{trait_xml_macro.rs:336},
+			\path{trait_xml_macro.rs:823}
+			\pause
+			\item Callback framework: \path{trait_xml_macro.rs:87},
+			\path{name_ident.rs:92},
+			\path{trait_xml_macro.rs:261}
+		\end{itemize}
 	\end{frame}
 
 	\section[Review of macro\_rules!]{Review of {\color{macrorulescolor}\texttt{macro\_rules!}}}
@@ -164,8 +305,6 @@
 					colspec = cccc,
 					rowspec = cccc,
 					row{1-4} = {bg = main},
-					%hline{2-4} = {fg = main},
-					%vline{2-4} = {fg = main},
 				}
 				\fragspec{item}
 					& \fragspec{block}
@@ -570,122 +709,7 @@ fn main() {
 		multiple places.\pause{} As long as you have a consistent framework for calling your macros.
 	\end{frame}
 
-	\section{Applying what we've learned}
-	\subsection{Prelude to madness}
-	\begin{frame}{What now?}
-		Enough being nice. Let's use these for evil.
 
-		\pause
-
-		We're going to define traits using XML.
-	\end{frame}
-
-	\subsection{Start of the evil arc}
-	\begin{frame}[fragile]{(:<}
-		We're going to take this trait:
-
-		\begin{minted}[autogobble]{rust}
-pub trait Foo<const BAR: usize>: Baz {
-	type Baq: Qux;
-	const QUUX: Self::Baq;
-	fn corge<Grault, Garply>(waldo: Grault) -> Garply;
-}
-		\end{minted}
-	\end{frame}
-
-	\begin{frame}[fragile]{(:<}
-		And turn it into this XML:
-		\begin{center}
-			\begin{minipage}{0.45\linewidth}
-				\begin{minted}{xml}
-<trait>
-	<name>Foo</name>
-	<vis>pub</vis>
-	<bounds>
-		<const>
-			<name>BAR</name>
-			<type>usize</type>
-		</const>
-		<req>Baz</req>
-	</bounds>
-	<assoctype>
-		<name>Baq</name>
-		<bounds>
-			<req>Qux</req>
-		</bounds>
-	</assoctype>
-	<assocconst>
-		<name>QUUX</name>
-		<type>Self::Baq</type>
-	</assocconst>
-				\end{minted}
-			\end{minipage}
-			\hfill
-			\begin{minipage}{0.45\linewidth}
-				\begin{minted}[firstnumber = 21]{xml}
-    <assocfn>
-		<name>corge</name>
-		<bounds>
-			<type>
-				<name>Grault</name>
-			</type>
-			<type>
-				<name>Garply</name>
-			</type>
-		</bounds>
-		<args>
-			<arg>
-				<name>waldo</name>
-				<type>Grault</type>
-			</arg>
-		</args>
-		<retty>Garply</retty>
-	</assocfn>
-</trait>
-				\end{minted}
-			\end{minipage}
-		\end{center}
-
-		\pause
-
-		If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent question.
-		\pause I will not answer it.
-	\end{frame}
-
-	\subsection{what}
-	\begin{frame}{auro no please stop}
-		See the better question is, ``Ooh, how did you do that?'' \\
-
-		\pause
-
-		Let's take a look, shall we?
-	\end{frame}
-
-	\begin{frame}
-		These are the places we'll look at:
-
-		\small
-		\begin{itemize}
-			\item Internal rules:
-			\begin{itemize}
-				\item \path{trait_xml_macro.rs:9}, \path{trait_xml_macro.rs:37}
-				\item \path{assoc_fn.rs:1618}, \path{assoc_fn.rs:1649}, \path{assoc_fn.rs:1680},
-					\path{assoc_fn.rs:1711}
-			\end{itemize}
-			\pause
-			\item Incremental TT muncher: \path{vis.rs:58}
-			\pause
-			\item Push-down accumulation: \path{type_ty.rs:116}
-			\pause
-			\item TT bundling (and unbundling): \path{assoc_type.rs:88},
-				\path{trait_xml_macro.rs:336},
-				\path{trait_xml_macro.rs:823}
-			\pause
-			\item Callback framework: \path{trait_xml_macro.rs:87},
-				\path{name_ident.rs:92},
-				\path{trait_xml_macro.rs:261}
-		\end{itemize}
-	\end{frame}
 
 	\section{Debugging}
 	\begin{frame}[fragile]{how???}
@@ -759,5 +783,10 @@ pub trait Foo<const BAR: usize>: Baz {
 			\item If you need more steps to finish parsing, add them. Nobody needs to see all your
 				internal rules but you (:
 		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Materials}
+		The materials for this talk are available on GitHub and GitLab at
+		\texttt{AuroransSolis/rustconf-2023.git}.
 	\end{frame}
 \end{document}
