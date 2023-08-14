@@ -63,11 +63,7 @@
 }
 \usemintedstyle{default}
 
-% 1. native
-% 2. material
-% 3. paraiso-dark
-% 4. one-dark
-% 6. github-dark
+% 1.
 
 % tikz
 \usetikzlibrary{arrows, automata, positioning}
@@ -226,33 +222,323 @@
 
 		\pause
 
-		Let's take a look, shall we?
+		Let's look at a very simple example.
 	\end{frame}
 
-	\begin{frame}
-		These are the places we'll look at:
+	\begin{frame}[fragile]{im begging you}
+		\begin{onlyenv}<1>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml! {
+					<trait>
+						<name>Foo</name>
+						<vis>pub</vis>
+						<unsafe/>
+					</trait>
+				}
+			\end{minted}
+		\end{onlyenv}
 
-		\small
-		\begin{itemize}
-			\item Internal rules:
+		\pause
+
+		\begin{onlyenv}<2>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@parse {
+						input: [
+							<trait>
+								<name>Foo</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<3>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								<name>Foo</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<4>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_parse_name_ident! {
+					@parse {
+						input: [
+								Foo</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						name: ,
+						callback: [
+							name: trait_xml_inner,
+							rule: [@namecallback],
+							args: [
+								output: [],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<5>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_parse_name_ident! {
+					@parseend {
+						input: [
+								</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						name: Foo,
+						callback: [
+							name: trait_xml_inner,
+							rule: [@namecallback],
+							args: [
+								output: [],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<6>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@namecallback {
+						input: [
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [],
+						name: Foo,
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<7>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [[name Foo]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<8>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_parse_vis! {
+					@parse {
+						input: [
+								pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						callback: [
+							name: trait_xml_inner,
+							rule: [@viscallback],
+							args: [
+								output: [[name Foo]],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<9>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@viscallback {
+						input: [
+								<unsafe/>
+							</trait>
+						],
+						output: [[name Foo]],
+						vis: [pub],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<10>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								<unsafe/>
+							</trait>
+						],
+						output: [[name Foo] [vis pub]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<11>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [</trait>],
+						output: [[name Foo] [vis pub] [unsafe]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<12>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [[name Foo] [vis pub] [unsafe]],
+						vis: [],
+						unsafe: ,
+						name: ,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<13>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [[vis pub] [unsafe]],
+						vis: [],
+						unsafe: ,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<14>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [[unsafe]],
+						vis: [pub],
+						unsafe: ,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<15>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [],
+						vis: [pub],
+						unsafe: unsafe,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<16>
+			\begin{minted}[autogobble, linenos = false]{rust}
+				pub unsafe trait Foo {}
+			\end{minted}
+		\end{onlyenv}
+	\end{frame}
+
+	\subsection{why???}
+	\begin{frame}{i will not apologise}
+		There's a few points I'm trying to make here.
+
+		\pause
+
+		\begin{enumerate}
+			\item Declarative macros are capable of a whole lot, actually
+
+			\pause
+
+			\item You don't always need a proc macro
 			\begin{itemize}
-				\item \path{trait_xml_macro.rs:9}, \path{trait_xml_macro.rs:37}
-				\item \path{assoc_fn.rs:1618}, \path{assoc_fn.rs:1649}, \path{assoc_fn.rs:1680},
-				\path{assoc_fn.rs:1711}
+				\item Simplify projects (don't need a separate crate)
+				\item Reduce dependencies and sometimes compile times (no \texttt{syn} and
+					\texttt{quote})
 			\end{itemize}
-			\pause
-			\item Incremental TT muncher: \path{vis.rs:58}
-			\pause
-			\item Push-down accumulation: \path{type_ty.rs:116}
-			\pause
-			\item TT bundling (and unbundling): \path{assoc_type.rs:88},
-			\path{trait_xml_macro.rs:336},
-			\path{trait_xml_macro.rs:823}
-			\pause
-			\item Callback framework: \path{trait_xml_macro.rs:87},
-			\path{name_ident.rs:92},
-			\path{trait_xml_macro.rs:261}
-		\end{itemize}
+		\end{enumerate}
 	\end{frame}
 
 	\section[Review of macro\_rules!]{Review of {\color{macrorulescolor}\texttt{macro\_rules!}}}
@@ -368,30 +654,30 @@
 	\end{frame}
 
 	\begin{frame}[fragile]{Composition}
-		\begin{minted}[autogobble]{rust}
-macro_rules! me_reaping {
-	($let:tt $lhs:tt $equal:tt $rhs:tt) => {
-		// compose `:tt`s into a `:stmt`
-		me_reaping!(@matchstmt $let $lhs $equal $rhs)
-	};
-	(@matchstmt $stmt:stmt) => {
-		$stmt
-	};
-}
+		\begin{minted}[autogobble, highlightlines = {4, 6}]{rust}
+			macro_rules! me_reaping {
+				($let:tt $lhs:tt $equal:tt $rhs:tt) => {
+					// compose `:tt`s into a `:stmt`
+					me_reaping!(@matchstmt $let $lhs $equal $rhs)
+				};
+				(@matchstmt $stmt:stmt) => {
+					$stmt
+				};
+			}
 
-macro_rules! me_sowing {
-	($stmt:stmt) => {
-		// attempt to break a `:stmt` back into component `:tt`s
-		me_reaping!($stmt);
-	}
-}
+			macro_rules! me_sowing {
+				($stmt:stmt) => {
+					// attempt to break a `:stmt` back into component `:tt`s
+					me_reaping!($stmt);
+				}
+			}
 
-fn main() {
-	me_reaping!(let haha = "yes!!!");
-	println!("{haha}");
-	me_sowing!(let well_this = "sucks ):");
-	println!("{well_this}");
-}
+			fn main() {
+				me_reaping!(let haha = "yes!!!");
+				println!("{haha}");
+				me_sowing!(let well_this = "sucks ):");
+				println!("{well_this}");
+			}
 		\end{minted}
 	\end{frame}
 
@@ -546,23 +832,15 @@ fn main() {
 
 		This is the tool that every other pattern mentioned uses to work.
 
-		\begin{minted}[autogobble, highlightlines = {4}]{rust}
-macro_rules! me_reaping {
-	($let:tt $lhs:tt $equal:tt $rhs:tt) => {
-		// Recursive call to `me_reaping`
-		me_reaping!(@matchstmt $let $lhs $equal $rhs)
-	};
-	(@matchstmt $stmt:stmt) => {
-		$stmt
-	};
-}
-
-fn main() {
-	me_reaping!(let haha = "yes!!!");
-	println!("{haha}");
-	// no sowing (:<
-}
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* pattern */ => {
+					some_macro!(/* ... */)
+				};
+			}
 		\end{minted}
+
+		Full example: \path{fragments-demo/src/main.rs:4}
 	\end{frame}
 
 	\subsection{Internal Rules}
@@ -572,23 +850,16 @@ fn main() {
 		As said previously, you generally don't want users calling these rules. Usually they're used
 		as a helper to grab new kinds of tokens or to specify a certain mode of parsing.
 
-		\begin{minted}[autogobble, highlightlines = {6}]{rust}
-macro_rules! me_reaping {
-	($let:tt $lhs:tt $equal:tt $rhs:tt) => {
-		me_reaping!(@matchstmt $let $lhs $equal $rhs)
-	};
-	// PATTERNS: internal rule to grab a statement
-	(@matchstmt $stmt:stmt) => {
-		$stmt
-	};
-}
-
-fn main() {
-	me_reaping!(let haha = "yes!!!");
-	println!("{haha}");
-	// no sowing (:<
-}
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* other rules */
+				(@internalrule /* finish pattern */) => {
+					/* expansion */
+				};
+			}
 		\end{minted}
+
+		Full example: \path{fragments-demo/src/main.rs:[4,6]}
 	\end{frame}
 
 	\begin{frame}{Internal rules my beloved}
@@ -617,57 +888,41 @@ fn main() {
 
 		With these you typically look to grab an expected pattern including some inputs.
 
-		\begin{minted}[autogobble, highlightlines = {2, 5}]{rust}
-macro_rules! munch_and_crunch {
-	() => {
-		println!("empty!");
-	};
-	($first:tt $($rest:tt)*) => {
-		println!(concat!("munched: ", stringify!($first)));
-		munch_and_crunch!($($rest)*);
-	};
-}
-
-fn main() {
-	munch_and_crunch!(foo bar baz baq);
-	munch_and_crunch!(foo bar [baz baq]);
-}
+		\begin{minted}[autogobble, highlightlines = {2, 5}, linenos = false]{rust}
+			macro_rules! some_macro {
+				() => {
+					/* expansion */
+				};
+				($first:tt $($rest:tt)*) => {
+					/* expansion */
+				};
+			}
 		\end{minted}
 
-		This one is very simple, but \path{all-unique} in the repo shows a slightly more interesting
-		example of how to apply a pure TT muncher.
+		Full examples:
+		\begin{itemize}
+			\item \path{all-unique/src/main.rs:[1-18]}
+			\item \path{muncher-demo/src/main.rs:[1-9]}
+		\end{itemize}
 	\end{frame}
 
 	\subsection{Push-down Accumulation}
 	\begin{frame}[fragile]{Push-down accumulation my beloved}
 		This one hasn't been shown in this presentation yet! \\
 
-		Frequently used with incremental TT munchers for the purpose of holding tokens that have
-		been munched. For example:
-		\begin{minted}[autogobble]{rust}
-macro_rules! reverse_tokens {
-	(@rev [$first:tt$(, $rest:tt)*] [$($rev:tt),*]) => {
-		reverse_tokens! {
-			@rev [$($rest),*][$first $(, $rev)*]
-		}
-	};
-	(@rev [] [$($rev:tt),*]) => {
-		$($rev)*
-	};
-	($($tt:tt)+) => {
-		reverse_tokens! {
-			@rev [$($tt),+] []
-		}
-	};
-}
-
-fn main() {
-	reverse_tokens! {
-		;0 = foo let
-	}
-	println!("{foo}");
-}
+		Macros have to expand to a complete syntax element. Push-down accumulation is how you can
+		allow for incomplete intermediate expansions that eventually form a complete expansion.
+		For example:
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* other rules */
+				([$name:ident $($t:ty)+]) => {
+					pub struct $name($($t),+);
+				}
+			}
 		\end{minted}
+
+		Full example: \path{reverse-tokens/src/main.rs:[2,4,7,12]}
 	\end{frame}
 
 	\subsection{TT Bundling}
@@ -679,28 +934,24 @@ fn main() {
 
 		Multiple tokens $\Rightarrow$ \texttt{[]}-list (\fragspec{tt})
 
-		Let me show you what I mean.
-	\end{frame}
-
-	\begin{frame}[fragile]{TT bundling}
-		\path{tt-bundling/src/main.rs}:
-		\inputminted[autogobble, linenos]{rust}{../tt-bundling/src/main.rs}
+		\inputminted[
+			autogobble,
+			highlightlines = {4, 7, 13},
+			lastline = 16,
+			linenos = false,
+		]{rust}{../tt-bundling/src/main.rs}
 	\end{frame}
 
 	\subsection{Callbacks}
 	\begin{frame}[fragile]{Callbacks my beloved}
 		Very very generally, a callback looks something like this:
 
-		\begin{minted}[autogobble]{rust}
-macro_rules! callback {
-	($callback:ident( $($args:tt)* )) => {
-		$callback!( $($args)* )
-	};
-}
-
-fn main() {
-	callback!(callback(println("Yes, this *was* unnecessary.")));
-}
+		\begin{minted}[autogobble, highlightlines = {2, 3}, linenos = false]{rust}
+			macro_rules! callback {
+				($callback:ident( $($args:tt)* )) => {
+					$callback!( $($args)* )
+				};
+			}
 		\end{minted}
 
 		\pause
@@ -709,10 +960,12 @@ fn main() {
 		multiple places.\pause{} As long as you have a consistent framework for calling your macros.
 	\end{frame}
 
-
-
 	\section{Debugging}
-	\begin{frame}[fragile]{how???}
+	\begin{frame}{That's the neat part}
+		\includegraphics[width = \linewidth]{neat-part.png}
+	\end{frame}
+
+	\begin{frame}[fragile]{Kinda, at least}
 		If you're defining items outside of functions, how do you debug things? \\
 
 		\pause
@@ -744,10 +997,9 @@ fn main() {
 
 		Yes you can.
 
-		\begin{minted}[autogobble]{rust}
+		\begin{minted}[autogobble, linenos = false]{rust}
 			macro_rules! this_fails_somehow {
 				// a bunch of rules up here...
-
 				// ...and then at the end:
 				($($all:tt)*) => {
 					const _: &str = concat!($(stringify!($all)),*);
@@ -785,8 +1037,9 @@ fn main() {
 		\end{itemize}
 	\end{frame}
 
+	\section{Thank you!}
 	\begin{frame}{Materials}
 		The materials for this talk are available on GitHub and GitLab at
-		\texttt{AuroransSolis/rustconf-2023.git}.
+		\texttt{AuroransSolis/rustconf-2023}.
 	\end{frame}
 \end{document}
