@@ -2,11 +2,13 @@
 \documentclass{beamer}
 
 \usepackage{emoji}
+\usepackage{fontawesome5}
 \usepackage{fontspec}
 \usepackage{framed}
 \usepackage{hyperref}
 \usepackage{iftex}
 \usepackage{minted}
+\usepackage{pdfpc}
 \usepackage{svg}
 \usepackage{tabularray}
 \usepackage{tikz}
@@ -43,6 +45,14 @@
 % Title
 \title{Anything you can do, I can do worse with {\color{macrorulescolor}\texttt{macro\_rules!}}}
 \author{Aurorans Solis}
+%\institute{
+%	\scriptsize{any/any}\\[1cm]
+%	\small{\texttt{
+%			{\color{black}\faGithub} AuroransSolis\\
+%			{\color{gitlabcolor}\faGitlab} AuroransSolis\\
+%			{\color{discordcolor}\faDiscord} aurorans\_solis
+%	}}
+%}
 \date{}
 \titlegraphic{\includegraphics[scale = 0.15]{profile-pic.png}}
 
@@ -71,6 +81,8 @@
 %
 
 % Colours
+\definecolor{discordcolor}{RGB}{114, 137, 218}
+\definecolor{gitlabcolor}{RGB}{252, 109, 38}
 \definecolor{lightergrey}{RGB}{230, 230, 230}
 \definecolor{macrorulescolor}{RGB}{86, 156, 214}
 \definecolor{lightgrey}{RGB}{212, 212, 212}
@@ -95,6 +107,16 @@
 \begin{document}
 	\begin{frame}
 		\maketitle
+		\vspace{-1.9cm}
+		\scriptsize{any/any}
+		\vspace{1.75cm}
+		\newline
+		\small{\texttt{
+			{\color{black}\faGithub} AuroransSolis\\
+			{\color{gitlabcolor}\faGitlab} AuroransSolis\\
+			{\color{discordcolor}\faDiscord} aurorans\_solis
+		}}
+		\vspace{4cm}
 	\end{frame}
 
 	\section*{The Horrors}
@@ -137,94 +159,100 @@
 	\begin{frame}{(:<}
 		It's not snacktime anymore. It's crimetime.
 
-		\pause
-
-		We're going to define traits using XML.
+		We're going to define traits using XML and declarative macros.
 	\end{frame}
 
 	\subsection{Start of the evil arc}
 	\begin{frame}[fragile]{(:<}
-		We're going to take this trait:
+		\begin{onlyenv}<1>
+			We're going to take this trait:
 
-		\begin{minted}[autogobble]{rust}
-			pub trait Foo<const BAR: usize>: Baz {
-				type Baq: Qux;
-				const QUUX: Self::Baq;
-				fn corge<Grault, Garply>(waldo: Grault) -> Garply;
-			}
-		\end{minted}
-	\end{frame}
-
-	\begin{frame}[fragile]{(:<}
-		And turn it into this XML:
-		\begin{center}
-			\begin{minipage}{0.45\linewidth}
-				\begin{minted}[autogobble]{xml}
-					<trait>
-						<name>Foo</name>
-						<vis>pub</vis>
-						<bounds>
-							<const>
-								<name>BAR</name>
-								<type>usize</type>
-							</const>
-							<req>Baz</req>
-						</bounds>
-						<assoctype>
-							<name>Baq</name>
-							<bounds>
-								<req>Qux</req>
-							</bounds>
-						</assoctype>
-						<assocconst>
-							<name>QUUX</name>
-							<type>Self::Baq</type>
-						</assocconst>
-				\end{minted}
-			\end{minipage}
-			\hfill
-			\begin{minipage}{0.45\linewidth}
-				\begin{minted}[autogobble, firstnumber = 21]{xml}
-						<assocfn>
-							<name>corge</name>
-							<bounds>
-								<type>
-									<name>Grault</name>
-								</type>
-								<type>
-									<name>Garply</name>
-								</type>
-							</bounds>
-							<args>
-								<arg>
-									<name>waldo</name>
-									<type>Grault</type>
-								</arg>
-							</args>
-							<ret>Garply</ret>
-						</assocfn>
-					</trait>
-				\end{minted}
-			\end{minipage}
-		\end{center}
+			\begin{minted}[autogobble]{rust}
+				pub trait Foo<const BAR: usize>: Baz {
+					type Baq: Qux;
+					const QUUX: Self::Baq;
+					fn corge<Grault, Garply>(waldo: Grault) -> Garply;
+				}
+			\end{minted}
+		\end{onlyenv}
 
 		\pause
 
-		If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent question.
-		\pause I will not answer it.
+		\begin{onlyenv}<2->
+			And turn it into this XML:
+			\begin{center}
+				\begin{minipage}{0.45\linewidth}
+					\begin{minted}[autogobble]{xml}
+						<trait>
+							<name>Foo</name>
+							<vis>pub</vis>
+							<bounds>
+								<const>
+									<name>BAR</name>
+									<type>usize</type>
+								</const>
+								<req>Baz</req>
+							</bounds>
+							<assoctype>
+								<name>Baq</name>
+								<bounds>
+									<req>Qux</req>
+								</bounds>
+							</assoctype>
+							<assocconst>
+								<name>QUUX</name>
+								<type>Self::Baq</type>
+							</assocconst>
+					\end{minted}
+				\end{minipage}
+				\hfill
+				\begin{minipage}{0.45\linewidth}
+					\begin{minted}[autogobble, firstnumber = 21]{xml}
+							<assocfn>
+								<name>corge</name>
+								<bounds>
+									<type>
+										<name>Grault</name>
+									</type>
+									<type>
+										<name>Garply</name>
+									</type>
+								</bounds>
+								<args>
+									<arg>
+										<name>waldo</name>
+										<type>Grault</type>
+									</arg>
+								</args>
+								<ret>Garply</ret>
+							</assocfn>
+						</trait>
+					\end{minted}
+				\end{minipage}
+			\end{center}
+
+			\pause
+
+			If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent
+			question. \pause I will not answer it.
+		\end{onlyenv}
 	\end{frame}
 
 	\subsection{what}
 	\begin{frame}{auro no please stop}
-		See the better question is, ``Ooh, how did you do that?'' \\
+		See the better question is, ``Ooh, how does that work?'' \\
 
 		\pause
 
 		Let's look at a very simple example.
 	\end{frame}
 
-	\begin{frame}[fragile]{im begging you}
+	\begin{frame}[fragile]{im begging you dont do this}
 		\begin{onlyenv}<1>
+			\pdfpcnote{
+				- This will show how the macros I wrote parse XML and then expand it into a trait\\
+				- My approach: XML to `:tt` tree, then `:tt` tree to trait
+			}
 			\begin{minted}[autogobble, linenos = false]{rust}
 				trait_xml! {
 					<trait>
@@ -239,7 +267,10 @@
 		\pause
 
 		\begin{onlyenv}<2>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- First order of business: call the *actual* parser macro
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1}]{rust}
 				trait_xml_inner! {
 					@parse {
 						input: [
@@ -257,7 +288,12 @@
 		\pause
 
 		\begin{onlyenv}<3>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Now we're in the important part\\
+				- We look for valid starts of tag pairs - first one is `<name>`\\
+				- Then we call the macro that parses that section
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {2}]{rust}
 				trait_xml_inner! {
 					@parsetrait {
 						input: [
@@ -275,7 +311,12 @@
 		\pause
 
 		\begin{onlyenv}<4>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Note here the use of a callback framework\\
+				- This framework lets me use this same `trait_xml_parse_name_ident!` everywhere that
+				  a `<name>` section needs to be parsed
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1, 10-16}]{rust}
 				trait_xml_parse_name_ident! {
 					@parse {
 						input: [
@@ -300,7 +341,11 @@
 		\pause
 
 		\begin{onlyenv}<5>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- We have the info we want and see the closing tag\\
+				- Now we use the info in the `callback` section to return to the calling macro
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {2, 11-15}]{rust}
 				trait_xml_parse_name_ident! {
 					@parseend {
 						input: [
@@ -325,7 +370,10 @@
 		\pause
 
 		\begin{onlyenv}<6>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- The calling macro then catches the callback with the "returned value"
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1, 2, 9}]{rust}
 				trait_xml_inner! {
 					@namecallback {
 						input: [
@@ -343,7 +391,10 @@
 		\pause
 
 		\begin{onlyenv}<7>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Then the "returned value" is dealt with and we keep on parsing.
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {2, 8}]{rust}
 				trait_xml_inner! {
 					@parsetrait {
 						input: [
@@ -360,7 +411,12 @@
 		\pause
 
 		\begin{onlyenv}<8>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Same thing happens for visibility as names - we saw a `<vis>` tag, so we call
+				  the visibility parsing macro with an appropriate callback section\\
+				- Note how the callback section contains what we've parsed so far
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1, 8-14}]{rust}
 				trait_xml_parse_vis! {
 					@parse {
 						input: [
@@ -383,7 +439,10 @@
 		\pause
 
 		\begin{onlyenv}<9>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Catch a callback just like before
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1, 2, 8}]{rust}
 				trait_xml_inner! {
 					@viscallback {
 						input: [
@@ -400,7 +459,12 @@
 		\pause
 
 		\begin{onlyenv}<10>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Handle the "returned value" and continue parsing\\
+				- For self-closing tags it was enough just to have the macro they were relevant to
+				  handle them directly
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {2, 7}]{rust}
 				trait_xml_inner! {
 					@parsetrait {
 						input: [
@@ -416,7 +480,12 @@
 		\pause
 
 		\begin{onlyenv}<11>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- And now we see the closing tag for a trait def\\
+				- The XML has been transformed into a `:tt` tree that can be matched in segments
+				  unambiguously and without clashing with follow-set ambiguity restrictions
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {3}]{rust}
 				trait_xml_inner! {
 					@parsetrait {
 						input: [</trait>],
@@ -429,7 +498,11 @@
 		\pause
 
 		\begin{onlyenv}<12>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- Now we take the `:tt` tree we parsed and expand it out into everything that makes
+				  up a trait def
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {2}]{rust}
 				trait_xml_inner! {
 					@expand {
 						output: [[name Foo] [vis pub] [unsafe]],
@@ -450,7 +523,11 @@
 		\pause
 
 		\begin{onlyenv}<13>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\pdfpcnote{
+				- The first `:tt` has its tokens moved into the relevant field\\
+				- Repeat until the output list is empty
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {6}]{rust}
 				trait_xml_inner! {
 					@expand {
 						output: [[vis pub] [unsafe]],
@@ -471,7 +548,7 @@
 		\pause
 
 		\begin{onlyenv}<14>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {4}]{rust}
 				trait_xml_inner! {
 					@expand {
 						output: [[unsafe]],
@@ -492,7 +569,7 @@
 		\pause
 
 		\begin{onlyenv}<15>
-			\begin{minted}[autogobble, linenos = false]{rust}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {5}]{rust}
 				trait_xml_inner! {
 					@expand {
 						output: [],
@@ -513,6 +590,9 @@
 		\pause
 
 		\begin{onlyenv}<16>
+			\pdfpcnote{
+				- And once that list is empty, we can expand all those fields into a trait def
+			}
 			\begin{minted}[autogobble, linenos = false]{rust}
 				pub unsafe trait Foo {}
 			\end{minted}
@@ -564,21 +644,9 @@
 
 		\pause
 
-		Rules are tried in order from top to bottom. \\
-
-		\pause
-
-		We have fragments and fragment specifiers to allow for general AST node input but constrain
-		what form that input is allowed to take. \\
-
-		\pause
-
-		We also have repetition specifiers for:
-		\begin{itemize}
-			\item zero or one (\texttt{?})
-			\item zero or more (\texttt{*})
-			\item one or more (\texttt{+})
-		\end{itemize}
+		Rules are tried in order from top to bottom. This is the arbiter between ambiguous rules.
+		Both \mintinline{rust}{(foo bar)} and \mintinline{rust}{(foo $next:tt)} match
+		\mintinline{rust}{foo bar}, but which one is chosen depends on their order in the macro def.
 	\end{frame}
 
 	\subsection{What are our AST node types, a.k.a. fragment specifiers?}
@@ -608,8 +676,8 @@
 					& \empty{}
 			\end{tblr}
 		\end{center}
-		Each of these, except \maincolour{\fragspec{tt}} are subject to regular Rust parsing rules.
-		\\
+		Each of these, except \maincolour{\fragspec{tt}}, are subject to regular Rust parsing rules.
+		Plus regex-like repetitions with \texttt{\$()?}, \texttt{\$()*}, and \texttt{\$()+}. \\
 
 		\pause
 
@@ -718,8 +786,10 @@
 		\begin{enumerate}
 			\item No significant whitespace
 			\pause
-			\item No matching tokens (generically, at least, without a bunch more macros)
+			\item No matching tokens (cannot do \mintinline{rust}{$foo == $bar} or similar)
 		\end{enumerate}
+		\pause
+		These are doable with proc macros, but those aren't the topic of today's talk.
 	\end{frame}
 
 	\section{Main Useful Patterns}
@@ -775,6 +845,11 @@
 		\pause
 
 		\begin{itemize}
+			\pdfpcnote{
+				- AFTER READING BULLET POINT\\
+				- The patterns are hard to separate, since almost anything non-trivial will need
+				  two or more of these patterns.
+			}
 			\item You're going to hear and see, ``You've seen this already in this presentation!''
 				a lot.
 
@@ -818,9 +893,9 @@
 
 			\pause
 
-			\item This talk is mostly going to be cursed stuff, however, I'll also talk about a few
-			ways I've used these patterns in my own work and also on how to make things a little
-			less cursed.
+			\item This talk is mostly going to be showing how some pretty cursed stuff works, but
+				at the end of the talk I'll give you a few ways to help ``debug'' macros and make
+				writing them more manageable.
 		\end{itemize}
 	\end{frame}
 
@@ -837,8 +912,6 @@
 				};
 			}
 		\end{minted}
-
-		Full example: \path{fragments-demo/src/main.rs:4}
 	\end{frame}
 
 	\subsection{Internal Rules}
@@ -857,10 +930,19 @@
 			}
 		\end{minted}
 
-		Full example: \path{fragments-demo/src/main.rs:[4,6]}
+		Full examples:
+		\begin{itemize}
+			\item \path{fragments-demo/src/main.rs:[4,6]}
+			\item \path{all-unique/src/main.rs:[5,9,12,15]}
+			\item \path{reverse-tokens/src/main.rs:[2,7]}
+		\end{itemize}
 	\end{frame}
 
 	\begin{frame}{Internal rules my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, these were used for setting modes and for catching
+			  callbacks.
+		}
 		Not all internal rules start with \texttt{@something}! Internal rules are just any rules
 		that users are not expected to call but are used at some intermediate stage in macro
 		expansion. \\
@@ -882,6 +964,11 @@
 
 	\subsection{Incremental TT munchers}
 	\begin{frame}[fragile]{Incremental TT munchers my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, these were used to:\\
+			  a. Grab starting tags, expected token types, or ending tags\\
+			  b. Circumvent follow-set ambiguity restrictions
+		}
 		You haven't seen this one already in this presentation! Surprise! \\
 
 		With these you typically look to grab an expected pattern including some inputs.
@@ -906,6 +993,11 @@
 
 	\subsection{Push-down Accumulation}
 	\begin{frame}[fragile]{Push-down accumulation my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, this was used to:\\
+			  a. Circumvent follow-set ambiguity restrictions\\
+			  b. Hold parsed tokens in the translated `:tt` tree format
+		}
 		This one hasn't been shown in this presentation yet! \\
 
 		Macros have to expand to a complete syntax element. Push-down accumulation is how you can
@@ -925,6 +1017,10 @@
 
 	\subsection{TT Bundling}
 	\begin{frame}[fragile]{TT bundling my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros this was used to bundle together options for expansion of
+			  everything, but especially things like associated functions
+		}
 		This one hasn't shown up yet either! \\
 
 		TT bundling is a sort of special case for composition, except this time we \textit{can}
@@ -942,6 +1038,11 @@
 
 	\subsection{Callbacks}
 	\begin{frame}[fragile]{Callbacks my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros this was used to allow for macro reuse.\\
+			- For instance, every `<name>` section was parsed by one macro\\
+			- This allows you to have single points of failure and reduces maintenance burden
+		}
 		Very very generally, a callback looks something like this:
 
 		\begin{minted}[autogobble, highlightlines = {2, 3}, linenos = false]{rust}
@@ -973,8 +1074,8 @@
 		\pause
 
 		Introducing your new best friend:
-		\begin{minted}[autogobble]{rust}
-			const _: &str = stringify!($tokens);
+		\begin{minted}[autogobble, linenos = false, highlightlines = {1, 3}]{rust}
+			const _: &str = stringify!($token);
 			// also
 			const _: &str = concat!($(stringify($tokens)),*);
 		\end{minted}
@@ -995,7 +1096,7 @@
 
 		Yes you can.
 
-		\begin{minted}[autogobble, linenos = false]{rust}
+		\begin{minted}[autogobble, linenos = false, highlightlines = {4-6}]{rust}
 			macro_rules! this_fails_somehow {
 				// a bunch of rules up here...
 				// ...and then at the end:
@@ -1018,7 +1119,11 @@
 
 		My XML parsing macros do this a bunch - if you give them an invalid input, a lot of the
 		time it'll expand to a \texttt{compile\_error!}, e.g. in \texttt{lifetime.rs}:
-		\inputminted[firstline = 342, lastline = 354]{rust}{../trait-xml/src/lifetime.rs}
+		\inputminted[
+			firstline = 342,
+			lastline = 354,
+			highlightlines = {354},
+		]{rust}{../trait-xml/src/lifetime.rs}
 	\end{frame}
 
 	\begin{frame}{Other things}
@@ -1035,7 +1140,7 @@
 		\end{itemize}
 	\end{frame}
 
-	\section{Thank you!}
+	\section{That's all!}
 	\begin{frame}{Materials}
 		The materials for this talk are available on GitHub and GitLab at
 		\texttt{AuroransSolis/rustconf-2023}.
