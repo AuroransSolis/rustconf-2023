@@ -1,14 +1,25 @@
-LATEX = lualatex --shell-escape --synctex=1 --interaction=nonstopmode
-
-.PHONY: all
+.PHONY: all main.pdf clean cleanall
 
 all: main.pdf
 
 main.pdf: main.tex
-	$(LATEX) main.tex
+	latexmk -pdf -pdflatex="lualatex --shell-escape --synctex=1 --interaction=nonstopmode" -use-make main.tex
 
 clean:
-	rm main.aux main.log main.nav main.pdf main.snm main.synctex.gz main.toc main.vrb
+	latexmk -CA
+	for file in main.{nav,snm,vrb}; \
+	do \
+		if [ -f $$file ]; \
+		then \
+			rm $$file; \
+		fi; \
+	done
 
 cleanall: clean
-	rm -r svg-inkscape _minted-main
+	for dir in _minted-main svg-inkscape; \
+	do \
+		if [ -d $$dir ]; \
+		then \
+			rm -r $$dir; \
+		fi; \
+	done

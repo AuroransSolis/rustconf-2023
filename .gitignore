@@ -4,6 +4,8 @@
 presentation/_minted-main
 presentation/*.aux
 presentation/*.bcf
+presentation/*.fdb_latexmk
+presentation/*.fls
 presentation/*.log
 presentation/*.nav
 presentation/*.out
