@@ -93,6 +93,13 @@
 \newcommand{\errred}[1]{{\color{errredcolour}#1}}
 \newcommand{\errgreen}[1]{{\color{errgreencolour}#1}}
 \newcommand{\errblue}[1]{{\color{errbluecolour}#1}}
+\newcommand{\ferrishydrate}[0]{
+	\tikz[remember picture, overlay]{
+		\node[anchor = south east, outer sep = 0.5cm] at (current page.south east){
+			\includesvg[width = 1cm]{ferris-hydrate.svg}
+		};
+	}
+}
 
 \begin{document}
 	\begin{frame}
@@ -175,15 +182,16 @@
 			look like what I remember. The letters look wrong. Lemme zoom in real quick and see
 			what's going on.
 		}
-		\centering
-		\includesvg[
-			width = \linewidth,
-			height = 0.8\textheight,
-			inkscape = true,
-			inkscapelatex = true,
-			inkscapeformat = pdf,
-			inkscapearea = page,
-		]{time-1.svg}
+		\begin{center}
+			\includesvg[
+				width = \linewidth,
+				height = 0.8\textheight,
+				inkscape = true,
+				inkscapelatex = true,
+				inkscapeformat = pdf,
+				inkscapearea = page,
+			]{time-1.svg}
+		\end{center}
 	\end{frame}
 
 	\begin{frame}{???}
@@ -285,10 +293,15 @@
 				\end{minipage}
 			\end{center}
 
-			\pause
-
-			If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent
-			question. \pause I will not answer it.
+			\begin{onlyenv}<3->
+				If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent
+				question. \only<4->{I will not answer it.}
+			\end{onlyenv}
+			\vfill
+			\hfill
+			\begin{onlyenv}<2>
+				\ferrishydrate
+			\end{onlyenv}
 		\end{onlyenv}
 	\end{frame}
 
@@ -708,6 +721,9 @@
 			\begin{minted}[autogobble, linenos = false]{rust}
 				pub unsafe trait Foo {}
 			\end{minted}
+			\vfill
+			\hfill
+			\ferrishydrate
 		\end{onlyenv}
 	\end{frame}
 
@@ -907,6 +923,7 @@
 		\end{enumerate}
 		\pause
 		These are doable with proc macros, but those aren't the topic of today's talk.
+		\ferrishydrate
 	\end{frame}
 
 	\section{Main Useful Patterns}
@@ -1014,6 +1031,7 @@
 				at the end of the talk I'll give you a few ways to help ``debug'' macros and make
 				writing them more manageable.
 		\end{itemize}
+		\ferrishydrate
 	\end{frame}
 
 	\subsection{Recursion}
@@ -1188,11 +1206,10 @@
 			\item \emph{\textbf{Recursively}} pass the expansion of one macro as input to another
 		\end{itemize}
 
-		These are great for being able to reuse one macro in multiple places.\pause{} As long as you have a consistent framework for calling your macros.
-	\end{frame}
+		These are great for being able to reuse one macro in multiple places.\pause{} As long as
+		you have a consistent framework for calling your macros.
 
-	\begin{frame}{Callbacks my beloved}
-
+		\ferrishydrate
 	\end{frame}
 
 	\section{Debugging}
@@ -1260,7 +1277,7 @@
 		\inputminted[
 			firstline = 342,
 			lastline = 354,
-			highlightlines = {354},
+			highlightlines = {344, 354},
 		]{rust}{../trait-xml/src/lifetime.rs}
 	\end{frame}
 
@@ -1280,7 +1297,17 @@
 
 	\section{That's all!}
 	\begin{frame}{Materials}
+		\pdfpcnote{
+			The materials for this presentation are available on my GitHub and GitLab at this group
+			and project name. If this talk interested you at all, I invite you to go back and check
+			out the standalone version of this presentation, which includes some extra notes so you
+			don't have to come back and re-watch this presentation. The repo also includes some
+			crates with more complete examples of the macro patterns I talked about, as well as the
+			full suite of XML parsing macros.
+		}
 		The materials for this talk are available on GitHub and GitLab at
 		\texttt{AuroransSolis/rustconf-2023}.
+
+		\ferrishydrate
 	\end{frame}
 \end{document}
