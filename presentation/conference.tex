@@ -1266,6 +1266,55 @@
 		You still have to figure out why it's not matching.
 	\end{frame}
 
+	\begin{frame}[fragile]{But how did it get there???}
+		\begin{onlyenv}<1>
+			Sometimes it's hard to figure out just \emph{how} a macro ended up expanding the way it
+			did. Well, thankfully, we have a tool for that too! It's not super good, but it does
+			its job.\\
+
+			This new acquaintance is the unstable flag \texttt{-Z trace\_macros}.
+		\end{onlyenv}
+
+		\begin{onlyenv}<2>
+			Remember \texttt{bundle\_and\_unbundle!} from earlier? Let's \texttt{cargo check} that
+			with \texttt{-Z trace\_macros}.
+
+			\begin{center}
+				\colorbox{lightergrey}{
+					\ttfamily
+					\tiny
+					\parbox{0.95\textwidth}{%
+						\textbf{\errgreen{note}: trace\_macro}\\
+						\phantom{xx}\errblue{-->} src/main.rs:19:2\\
+						\phantom{xxx}\errblue{|}\\
+						\errblue{19 |} \errgreen{/}\phantom{xxxxx}bundle\_and\_unbundle! \{\\
+						\errblue{20 |} \errgreen{|}\phantom{xxxxxxxxx}foo, u8, 0\\
+						\errblue{21 |} \errgreen{|}\phantom{xxxxx}\}\\
+						\phantom{xxx}\errblue{|} \errgreen{|\_\_\_\_\_\^{}}\\
+						\phantom{xxx}\errblue{|}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} %
+							expanding \`{}bundle\_and\_unbundle! %
+							\{ foo, u8, 0 \}\`{}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} %
+							to \`{}bundle\_and\_unbundle! \{ %
+							@ bundled [foo, u8, 0] \}\`{}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} %
+							expanding \`{}bundle\_and\_unbundle! %
+							\{ @ bundled [foo, u8, 0] \}\`{}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} %
+							to \`{}const \_ : \& str = %
+							stringify! ([foo, u8, 0]) ; bundle\_and\_unbundle!\\
+						\phantom{xxxxxxxxxxx}\{ @ unbundle [foo, u8, 0] \}\`{}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} %
+							expanding \`{}bundle\_and\_unbundle! %
+							\{ @ unbundle [foo, u8, 0] \}\`{}\\
+						\phantom{xxx}\errblue{=} \textbf{note:} to \`{}let foo : u8 = 0 ;\`{}%
+					}
+				}
+			\end{center}
+		\end{onlyenv}
+	\end{frame}
+
 	\begin{frame}[fragile]{No rules expected the token\dots}
 		Another thing you can do to keep \texttt{\errred{error}: no rules expected the token} from
 		coming up is by just\dots{} making rules that expect the token/those tokens. \\
