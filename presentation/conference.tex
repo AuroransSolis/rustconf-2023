@@ -1,0 +1,1286 @@
+%\documentclass[aspectratio = 169]{beamer}
+\documentclass{beamer}
+
+\usepackage{emoji}
+\usepackage{fontawesome5}
+\usepackage{fontspec}
+\usepackage{framed}
+\usepackage{hyperref}
+\usepackage{iftex}
+\usepackage{minted}
+\usepackage{pdfpc}
+\usepackage{svg}
+\usepackage{tabularray}
+\usepackage{tikz}
+\usepackage{ulem}
+\usepackage{xcolor}
+
+\ifpdftex
+	\usepackage[utf8x]{inputenc}
+\fi
+
+%
+% Document setup
+%
+
+% hyperref
+\AtBeginDocument{
+	\hypersetup{
+		pdftitle = {Anything you can do, I can do worse with `macro\_rules!`},
+		pdfauthor = {Aurorans Solis},
+	}
+}
+
+% Fonts
+\newfontfamily\jetbrainsmono{JetBrains Mono}[NFSSFamily = JetBrains Mono]
+\setemojifont{TwemojiMozilla}
+
+% Beamer theme
+\usetheme[nofirafonts]{focus}
+\setsansfont{Fira Sans}
+\setmonofont{Fira Mono}
+
+% Title
+\title{Anything you can do, I can do worse with {\color{macrorulescolor}\texttt{macro\_rules!}}}
+\author{Aurorans Solis}
+\date{}
+\titlegraphic{\includegraphics[scale = 0.15]{profile-pic.png}}
+
+%
+% Package configuration
+%
+
+% Minted
+\setminted{
+	bgcolor = lightergrey,
+	fontfamily = JetBrains Mono,
+	fontsize = \tiny,
+	highlightcolor = blue9,
+	linenos = true,
+	tabsize = 4,
+	numberblanklines = true,
+	numbersep = 2pt,
+}
+\usemintedstyle{default}
+
+% tikz
+\usetikzlibrary{arrows, automata, positioning}
+
+%
+% Other
+%
+
+% Colours
+\definecolor{discordcolor}{RGB}{114, 137, 218}
+\definecolor{gitlabcolor}{RGB}{252, 109, 38}
+\definecolor{lightergrey}{RGB}{230, 230, 230}
+\definecolor{macrorulescolor}{RGB}{86, 156, 214}
+\definecolor{lightgrey}{RGB}{212, 212, 212}
+\definecolor{fragspeccolor}{RGB}{156, 220, 254}
+\definecolor{ifcolor}{RGB}{197, 134, 192}
+\definecolor{errwhite}{RGB}{255, 255, 255}
+\definecolor{errredcolour}{RGB}{255, 0, 0}
+\definecolor{errgreencolour}{RGB}{0, 255, 0}
+\definecolor{errbluecolour}{RGB}{24, 135, 241}
+
+% Extra commands
+\newcommand{\fragspec}[1]{{\color{lightgrey}:}{\color{fragspeccolor}#1}}
+\newcommand{\rustkeyword}[1]{{\color{ifcolor}\texttt{#1}}}
+\newcommand{\rusttoken}[1]{{\color{lightgrey}\texttt{#1}}}
+\newcommand{\eths}{\emoji{two-hearts}}
+\newcommand{\maincolour}[1]{\colorbox{main}{#1}}
+\newcommand{\errwhite}[1]{{\color{errwhitecolour}#1}}
+\newcommand{\errred}[1]{{\color{errredcolour}#1}}
+\newcommand{\errgreen}[1]{{\color{errgreencolour}#1}}
+\newcommand{\errblue}[1]{{\color{errbluecolour}#1}}
+
+\begin{document}
+	\begin{frame}
+		\maketitle
+		\vspace{-1.9cm}
+		\scriptsize{any/any}
+		\vspace{1.75cm}
+		\newline
+		\small{\texttt{
+			{\color{black}\faGithub} AuroransSolis\\
+			{\color{gitlabcolor}\faGitlab} AuroransSolis\\
+			{\color{discordcolor}\faDiscord} aurorans\_solis
+		}}
+		\vspace{4cm}
+	\end{frame}
+
+	\section{Quick Refresher}
+	\begin{frame}{Easing Into It}
+		A few quick things:
+		\pause
+		\begin{itemize}
+			\pdfpcnote{
+				- `@something` in a macro invocation isn't special syntax. `@` itself means nothing
+				  in particular, it's just an old convention used to name an "internal rule" in
+				  declarative macros (we'll talk more about what that is later)
+			}
+			\item \texttt{@something} in a macro invocation isn't special syntax.
+
+			\pause
+
+			\pdfpcnote{
+				- We use recursion a lot in macros because an individual rule itself cannot be
+				  recursive or ambiguous. So if we want to match something that requires recursion
+				  or that can be parsed ambiguously or require recursion, then it's up to the macro
+				  as a whole to be recursive and/or have rules to handle the ambiguity.\\
+				- You may also have to circumvent some of Rust's parsing ambiguity rules as well,
+				  which will require recursion.
+			}
+			\item We use recursion a lot in macros because an individual rule itself cannot be
+			recursive, ambiguous, or violate Rust's parsing ambiguity rules.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Hold on, that's a lot}
+		\begin{enumerate}
+			\item A rule cannot be recursive?
+			\pause
+			\begin{itemize}
+				\item Rules only have regex-like repetition specifiers: \texttt{?}, \texttt{*}, and
+				\texttt{+}. This doesn't give the tools for recursion.
+			\end{itemize}
+
+			\pause
+
+			\item A rule cannot be ambiguous?
+			\pause
+			\begin{itemize}
+				\item A rule must only be able to be applied in one way to a particular input. For
+				example, \mintinline{rust}{($($foo:tt)? $bar:tt)} is ambiguous on the input
+				\mintinline{rust}{baz}.
+
+			\end{itemize}
+
+			\pause
+
+			\item A rule cannot violate Rust's parsing ambiguity rules?
+			\pause
+			\begin{itemize}
+				\item You cannot have unpaired \texttt{()}, \texttt{[]}, or \texttt{\{\}}.
+				\item You cannot have certain token types come before anything except certain allowed
+				tokens (follow set ambiguity)
+			\end{itemize}
+		\end{enumerate}
+	\end{frame}
+
+	\section*{The Horrors}
+	\begin{frame}{(:}
+		\pdfpcnote{
+			And with all that said, it's time for `macro_rules!`. But uh, wait, sorry, that doesn't
+			look like what I remember. The letters look wrong. Lemme zoom in real quick and see
+			what's going on.
+		}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-1.svg}
+	\end{frame}
+
+	\begin{frame}{???}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-2.svg}
+	\end{frame}
+
+	\begin{frame}{!!!}
+		\centering
+		\includesvg[
+			width = \linewidth,
+			height = 0.8\textheight,
+			inkscape = true,
+			inkscapelatex = true,
+			inkscapeformat = pdf,
+			inkscapearea = page,
+		]{time-3.svg}
+	\end{frame}
+
+	\begin{frame}{(:<}
+		It's not snacktime anymore. It's crimetime.
+
+		We're going to define traits using XML and declarative macros.
+	\end{frame}
+
+	\subsection{Start of the evil arc}
+	\begin{frame}[fragile]{(:<}
+		\begin{onlyenv}<1>
+			We're going to take this trait:
+
+			\begin{minted}[autogobble]{rust}
+				pub trait Foo<const BAR: usize>: Baz {
+					type Baq: Qux;
+					const QUUX: Self::Baq;
+					fn corge<Grault, Garply>(waldo: Grault) -> Garply;
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<2->
+			And turn it into this XML:
+			\begin{center}
+				\begin{minipage}{0.45\linewidth}
+					\begin{minted}[autogobble]{xml}
+						<trait>
+							<name>Foo</name>
+							<vis>pub</vis>
+							<bounds>
+								<const>
+									<name>BAR</name>
+									<type>usize</type>
+								</const>
+								<req>Baz</req>
+							</bounds>
+							<assoctype>
+								<name>Baq</name>
+								<bounds>
+									<req>Qux</req>
+								</bounds>
+							</assoctype>
+							<assocconst>
+								<name>QUUX</name>
+								<type>Self::Baq</type>
+							</assocconst>
+					\end{minted}
+				\end{minipage}
+				\hfill
+				\begin{minipage}{0.45\linewidth}
+					\begin{minted}[autogobble, firstnumber = 21]{xml}
+							<assocfn>
+								<name>corge</name>
+								<bounds>
+									<type>
+										<name>Grault</name>
+									</type>
+									<type>
+										<name>Garply</name>
+									</type>
+								</bounds>
+								<args>
+									<arg>
+										<name>waldo</name>
+										<type>Grault</type>
+									</arg>
+								</args>
+								<ret>Garply</ret>
+							</assocfn>
+						</trait>
+					\end{minted}
+				\end{minipage}
+			\end{center}
+
+			\pause
+
+			If you're asking, ``Why? Why would you do this to us?'' you're asking an excellent
+			question. \pause I will not answer it.
+		\end{onlyenv}
+	\end{frame}
+
+	\subsection{what}
+	\begin{frame}{auro no please stop}
+		See the better question is, ``Ooh, how does that work?'' \\
+
+		\pause
+
+		Let's look at a very simple example.
+	\end{frame}
+
+	\begin{frame}[fragile]{im begging you dont do this}
+		\begin{onlyenv}<1>
+			\pdfpcnote{
+				- This will show how the macros I wrote parse XML and then expand it into a trait\\
+				- My approach: XML to `:tt` tree, then `:tt` tree to trait\\
+				- Also to help bring your attention to things, lines with important new stuff will
+				  be highlighted blue and the part of the input that's going to get used will be in
+				  red.
+			}
+			\begin{minted}[autogobble, linenos = false]{rust}
+				trait_xml! {
+					<trait>
+						<name>Foo</name>
+						<vis>pub</vis>
+						<unsafe/>
+					</trait>
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<2>
+			\pdfpcnote{
+				- First order of business: call the *actual* parser macro
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {1},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@parse {
+						input: [
+							|\errred{<trait>}|
+								<name>Foo</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<3>
+			\pdfpcnote{
+				- Now we're in the important part\\
+				- We look for valid starts of tag pairs - first one is `<name>`\\
+				- Then we call the macro that parses that section
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {2},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								|\errred{<name>}|Foo</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<4>
+			\pdfpcnote{
+				- Note here the use of a callback framework\\
+				- This framework lets me use this same `trait_xml_parse_name_ident!` everywhere that
+				  a `<name>` section needs to be parsed
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {1, 10-16},
+				linenos = false,
+			]{rust}
+				trait_xml_parse_name_ident! {
+					@parse {
+						input: [
+								|\errred{Foo}|</name>
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						name: ,
+						callback: [
+							name: trait_xml_inner,
+							rule: [@namecallback],
+							args: [
+								output: [],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<5>
+			\pdfpcnote{
+				- We have the info we want and see the closing tag\\
+				- Now we use the info in the `callback` section to return to the calling macro
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {2, 11-15},
+				linenos = false,
+			]{rust}
+				trait_xml_parse_name_ident! {
+					@parseend {
+						input: [
+								|\errred{</name>}|
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						name: Foo,
+						callback: [
+							name: trait_xml_inner,
+							rule: [@namecallback],
+							args: [
+								output: [],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<6>
+			\pdfpcnote{
+				- The calling macro then catches the callback with the "returned value"
+			}
+			\begin{minted}[autogobble, highlightlines = {1, 2, 9}, linenos = false]{rust}
+				trait_xml_inner! {
+					@namecallback {
+						input: [
+								<vis>pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [],
+						name: Foo,
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<7>
+			\pdfpcnote{
+				- Then the "returned value" is dealt with and we keep on parsing.
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {2, 8},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								|\errred{<vis>}|pub</vis>
+								<unsafe/>
+							</trait>
+						],
+						output: [[name Foo]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<8>
+			\pdfpcnote{
+				- Same thing happens for visibility as names - we saw a `<vis>` tag, so we call
+				  the visibility parsing macro with an appropriate callback section\\
+				- Note how the callback section contains what we've parsed so far
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {1, 8-14},
+				linenos = false,
+			]{rust}
+				trait_xml_parse_vis! {
+					@parse {
+						input: [
+								|\errred{pub</vis>}|
+								<unsafe/>
+							</trait>
+						],
+						callback: [
+							name: trait_xml_inner,
+							rule: [@viscallback],
+							args: [
+								output: [[name Foo]],
+							],
+						],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<9>
+			\pdfpcnote{
+				- Catch a callback just like before
+			}
+			\begin{minted}[autogobble, linenos = false, highlightlines = {1, 2, 8}]{rust}
+				trait_xml_inner! {
+					@viscallback {
+						input: [
+								<unsafe/>
+							</trait>
+						],
+						output: [[name Foo]],
+						vis: [pub],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<10>
+			\pdfpcnote{
+				- Handle the "returned value" and continue parsing\\
+				- For self-closing tags it was enough just to have the macro they were relevant to
+				  handle them directly
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {2, 7},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [
+								|\errred{<unsafe/>}|
+							</trait>
+						],
+						output: [[name Foo] [vis pub]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<11>
+			\pdfpcnote{
+				- And now we see the closing tag for a trait def\\
+				- The XML has been transformed into a `:tt` tree that can be matched in segments
+				  unambiguously and without clashing with follow set ambiguity restrictions
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {3},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@parsetrait {
+						input: [|\errred{</trait>}|],
+						output: [[name Foo] [vis pub] [unsafe]],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<12>
+			\pdfpcnote{
+				- Now we take the `:tt` tree we parsed and expand it out into everything that makes
+				  up a trait def
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {2},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [|\errred{[name Foo]}| [vis pub] [unsafe]],
+						vis: [],
+						unsafe: ,
+						name: ,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<13>
+			\pdfpcnote{
+				- The first `:tt` has its tokens moved into the relevant field\\
+				- Repeat until the output list is empty
+			}
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {6},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [|\errred{[vis pub]}| [unsafe]],
+						vis: [],
+						unsafe: ,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<14>
+			\begin{minted}[
+				autogobble,
+				escapeinside = ||,
+				highlightlines = {4},
+				linenos = false,
+			]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [|\errred{[unsafe]}|],
+						vis: [pub],
+						unsafe: ,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<15>
+			\begin{minted}[autogobble, linenos = false, highlightlines = {5}]{rust}
+				trait_xml_inner! {
+					@expand {
+						output: [],
+						vis: [pub],
+						unsafe: unsafe,
+						name: Foo,
+						gparams: [],
+						tpbs: [],
+						wc: [],
+						assoc types: [],
+						assoc consts: [],
+						fns: [],
+					}
+				}
+			\end{minted}
+		\end{onlyenv}
+
+		\pause
+
+		\begin{onlyenv}<16>
+			\pdfpcnote{
+				- And once that list is empty, we can expand all those fields into a trait def
+			}
+			\begin{minted}[autogobble, linenos = false]{rust}
+				pub unsafe trait Foo {}
+			\end{minted}
+		\end{onlyenv}
+	\end{frame}
+
+	\subsection{why???}
+	\begin{frame}{i will not apologise}
+		There's a few points I'm trying to make here.
+
+		\pause
+
+		\begin{enumerate}
+			\item Declarative macros are capable of a whole lot, actually
+
+			\pause
+
+			\item You don't always need a proc macro
+			\begin{itemize}
+				\item Simplify projects (don't need a separate crate)
+				\item Reduce dependencies and sometimes compile times (no \texttt{syn} and
+					\texttt{quote})
+			\end{itemize}
+		\end{enumerate}
+	\end{frame}
+
+	\section[Review of macro\_rules!]{Review of {\color{macrorulescolor}\texttt{macro\_rules!}}}
+	\subsection{Why macros?}
+	\begin{frame}{Why macros?}
+		Turns out that metaprogramming is pretty cool actually \\
+
+		\begin{itemize}
+			\item Repeat lots of similar but not quite identical things
+			\pause
+			\item Define new grammars that get expanded to valid Rust
+			\pause
+			\item Confuse everyone (including yourself!)
+		\end{itemize}
+	\end{frame}
+
+	\subsection[What is a macro\_rules!]{What is a {\color{macrorulescolor}\texttt{macro\_rules!}}?}
+	\begin{frame}{What is a {\color{macrorulescolor}\texttt{macro\_rules!}}?}
+		Declarative macros (the ones we care about for this presentation) are sort of like functions
+		on the AST. \\
+
+		\pause
+
+		We try to match on certain AST patterns (rules) against the input. \\
+
+		\pause
+
+		Rules are tried in order from top to bottom. This is the arbiter between ambiguous rules.
+		Both \mintinline{rust}{(foo bar)} and \mintinline{rust}{(foo $next:tt)} match
+		\mintinline{rust}{foo bar}, but which one is chosen depends on their order in the macro def.
+	\end{frame}
+
+	\subsection{What are our AST node types, a.k.a. fragment specifiers?}
+	\begin{frame}{Fragment specifier types}
+		Rust has these fragment specifier types:
+		\begin{center}
+			\begin{tblr}{
+					colspec = cccc,
+					rowspec = cccc,
+					row{1-4} = {bg = main},
+				}
+				\fragspec{item}
+					& \fragspec{block}
+					& \fragspec{stmt}
+					& \fragspec{pat\_param} \\
+				\fragspec{pat}
+					& \fragspec{expr}
+					& \fragspec{ty}
+					& \fragspec{ident} \\
+				\fragspec{path}
+					& \eths\fragspec{tt}\eths
+					& \fragspec{meta}
+					& \fragspec{lifetime} \\
+				\empty{}
+					& \fragspec{vis}
+					& \fragspec{literal}
+					& \empty{}
+			\end{tblr}
+		\end{center}
+		Each of these, except \maincolour{\fragspec{tt}}, are subject to regular Rust parsing rules.
+		Plus regex-like repetitions with \texttt{\$()?}, \texttt{\$()*}, and \texttt{\$()+}. \\
+
+		\pause
+
+		There are also some limitations on what can come after certain fragment specifiers -- follow
+		set ambiguity restrictions
+		\begin{itemize}
+			\item \maincolour{\fragspec{expr}} and \maincolour{\fragspec{stmt}} can only be followed
+			by \texttt{=>}, \texttt{,}, or \texttt{;}
+
+			\item \maincolour{\fragspec{pat\_param}} can only be followed by \texttt{=>},
+			\texttt{,}, \texttt{=}, \texttt{|}, \rustkeyword{if}, or \rustkeyword{in}
+
+			\item etc.
+		\end{itemize}
+	\end{frame}
+
+	\subsection{Fragment Specifier Composition}
+	\begin{frame}{Composition}
+		Fragment specifiers can be composed into other fragment specifiers. For example, a
+		\maincolour{\fragspec{ident}} and \maincolour{\fragspec{expr}} can be composed into a
+		\maincolour{\fragspec{stmt}}. \\
+
+		\pause
+
+		The reverse is \textbf{NOT} true.
+		\begin{center}
+			\ttfamily
+			\begin{tabular}{cc}
+				\maincolour{\color{white}\fragspec{ident}, \fragspec{expr} => \fragspec{stmt}} =
+				& \emoji{check-mark} \\
+				\maincolour{\color{white}\fragspec{stmt} => \fragspec{ident}, \fragspec{expr}} =
+				& \emoji{cross-mark}
+			\end{tabular}
+		\end{center}
+
+		\pause
+
+		However, \maincolour{\fragspec{tt}} tends to be the most flexible option for these sorts of
+		operations.
+	\end{frame}
+
+	\begin{frame}[fragile]{Composition}
+		\begin{minted}[autogobble, highlightlines = {4, 6}]{rust}
+			macro_rules! me_reaping {
+				($let:tt $lhs:tt $equal:tt $rhs:tt) => {
+					// compose `:tt`s into a `:stmt`
+					me_reaping!(@matchstmt $let $lhs $equal $rhs)
+				};
+				(@matchstmt $stmt:stmt) => {
+					$stmt
+				};
+			}
+
+			macro_rules! me_sowing {
+				($stmt:stmt) => {
+					// attempt to break a `:stmt` back into component `:tt`s
+					me_reaping!($stmt);
+				}
+			}
+
+			fn main() {
+				me_reaping!(let haha = "yes!!!");
+				println!("{haha}");
+				me_sowing!(let well_this = "sucks ):");
+				println!("{well_this}");
+			}
+		\end{minted}
+	\end{frame}
+
+	\begin{frame}{Composition}
+		That gives the following error message:
+		\begin{center}
+			\colorbox{lightergrey}{
+				\ttfamily
+				\scriptsize
+				\parbox{0.9\textwidth}{%
+					\errred{error}: unexpected end of macro invocation\\
+					\phantom{xx}\errblue{-->} src/main.rs:14:26\\
+					\phantom{xxx}\errblue{|}\\
+					\phantom{x}\errblue{1  |} macro\_rules! me\_reaping \{\\
+					\phantom{xxx}\errblue{| ----------------------- when calling this macro}\\
+					\errblue{...}\\
+					\errblue{14 |}         me\_reaping!(\$stmt);\\
+					\phantom{xxx}\errblue{|}\phantom{xxxxxxxxxxxxxxxxxx}\errred{\^{} missing tokens
+						in macro arguments}\\
+					\phantom{xxx}\errblue{|}\\
+					\errgreen{note}: while trying to match meta-variable `\$lhs:tt`\\
+					\phantom{xx}\errblue{-->} src/main.rs:2:14\\
+					\phantom{xxx}\errblue{|}\\
+					\phantom{x}\errblue{2  |}\phantom{xxxxx}(\$let:tt \$lhs:tt \$equal:tt \$rhs:tt)
+						=> \{
+					\phantom{xxx}\errblue{|}\phantom{xxxxxxxxxxxxxx}\errgreen{\^{}\^{}\^{}\^{}\^{}%
+						\^{}\^{}}
+				}
+			}
+		\end{center}
+
+		\pause
+
+		This is definitely all the magic stuff we will do with token composition (lies!)
+	\end{frame}
+
+	\begin{frame}{Main Restrictions}
+		\pdfpcnote{
+			- Lacking token comparison is what gives rise to the usefulness of things like internal
+			  rules and TT munchers
+		}
+		There's two main restrictions that I've come across that aren't super obvious at first:
+		\pause
+		\begin{enumerate}
+			\item No significant whitespace
+			\pause
+			\item No matching tokens (cannot do \mintinline{rust}{$foo == $bar} or similar)
+
+		\end{enumerate}
+		\pause
+		These are doable with proc macros, but those aren't the topic of today's talk.
+	\end{frame}
+
+	\section{Main Useful Patterns}
+	\subsection{Overview}
+	\begin{frame}{Overview}
+		There are \sout{four}six Big Lads of the Macropalypse:
+		\begin{itemize}
+			\item Recursion
+			\begin{itemize}
+				\item of course macros can call themselves!
+			\end{itemize}
+
+			\pause
+
+			\item Internal rules
+			\begin{itemize}
+				\item these are branches that generally shouldn't be called by users\
+			\end{itemize}
+
+			\pause
+
+			\item Incremental TT munchers
+			\begin{itemize}
+				\item grabs chunks off the front end of the list of inputs
+			\end{itemize}
+
+			\pause
+
+			\item Push-down accumulation
+			\begin{itemize}
+				\item holds tokens in a list for later expansion
+			\end{itemize}
+
+			\pause
+
+			\item TT bundling
+			\begin{itemize}
+				\item boils down to grouping multiple tokens into a single list
+			\end{itemize}
+
+			\pause
+
+			\item Callbacks
+			\begin{itemize}
+				\item workaround to let you pass the expansion of one macro as input to another*
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Overview}
+		Let's look at each of these in turn, but first, disclaimers.
+
+		\pause
+
+		\begin{itemize}
+			\pdfpcnote{
+				- AFTER READING BULLET POINT\\
+				- The patterns are hard to separate, since almost anything non-trivial will need
+				  two or more of these patterns.
+			}
+			\item You're going to hear and see, ``You've seen this already in this presentation!''
+				a lot.
+
+			\pause
+
+			\item<3->
+				\only<3>{
+					Yes, these patterns (in combination) will let you parse just about anything.
+				}
+				\only<4->{
+					\sout{Yes, these patterns (in combination) will let you parse just about
+					anything.} {\errred{STOP STOP STOP}}
+				}
+
+			\pause
+
+			\item Recursion is \textbf{THE} building block for macros using the aforementioned
+				patterns, so for big inputs you may end up needing
+				{\small\texttt{\#![recursion\_limit = "a very big number"]}}.
+				\pause
+				And a long time to compile.
+				\pause
+				And a lot of memory.
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}{Overview}
+		Let's look at each of these in turn, but first, disclaimers.
+
+		\begin{itemize}
+			\item Declarative macros can be (and often are) very difficult to debug.
+
+			\pause
+
+			\item Maintenance of big macros is\dots{} oh boy.
+
+			\pause
+
+			\item All that said, these patterns can be leveraged to simplify some things quite a
+				lot.
+
+			\pause
+
+			\item This talk is mostly going to be showing how some pretty cursed stuff works, but
+				at the end of the talk I'll give you a few ways to help ``debug'' macros and make
+				writing them more manageable.
+		\end{itemize}
+	\end{frame}
+
+	\subsection{Recursion}
+	\begin{frame}[fragile]{Recursion my beloved}
+		You've seen this already in this presentation! \\
+
+		This is the tool that every other pattern mentioned uses to work.
+
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* pattern */ => {
+					some_macro!(/* ... */)
+				};
+			}
+		\end{minted}
+		In function-like syntax, this is roughly equivalent to:
+		\begin{minted}[autogobble, linenos = false]{rust}
+			fn some_macro(input: Ast) -> Ast {
+				match input {
+					/* pattern */ => some_macro(/* ... */)
+				}
+			}
+		\end{minted}
+	\end{frame}
+
+	\subsection{Internal Rules}
+	\begin{frame}[fragile]{Internal rules my beloved}
+		You've seen this already in this presentation! Two slides prior, even! \\
+
+		As said previously, you generally don't want users calling these rules. Usually they're used
+		as a helper to grab new kinds of tokens or to specify a certain mode of parsing.
+
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* other rules */
+				(@internalrule /* finish pattern */) => {
+					/* expansion */
+				};
+			}
+		\end{minted}
+	\end{frame}
+
+	\begin{frame}{Internal rules my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, these were used for setting modes and for catching
+			  callbacks.
+		}
+		Not all internal rules start with \texttt{@something}! Internal rules are just any rules
+		that users are not expected to call but are used at some intermediate stage in macro
+		expansion. \\
+
+		Useful in a couple ways
+		\begin{itemize}
+			\item Help avoid polluting crate namespace
+			\begin{itemize}
+				\item Each internal rule \emph{could} be its own macro, but those would also have to
+					be marked with \texttt{\#[macro\_export]}
+			\end{itemize}
+
+			\item Can be used to set ``modes''
+			\begin{itemize}
+				\item Useful for parsing context-sensitive things
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\subsection{Incremental TT munchers}
+	\begin{frame}[fragile]{Incremental TT munchers my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, these were used to:\\
+			  a. Grab starting tags, expected token types, or ending tags\\
+			  b. Circumvent follow set ambiguity restrictions
+		}
+		You haven't seen this one already in this presentation! Surprise! \\
+
+		With these you typically look to grab an expected pattern including some inputs.
+		\begin{minted}[autogobble, highlightlines = {2, 3, 4, 6}, linenos = false]{rust}
+			macro_rules! some_macro {
+				() => { /* expansion */ };
+				($first:tt $($rest:tt)*) => {
+					do_something_with!($first);
+					/* expansion */
+					some_macro!($($rest)*);
+				};
+			}
+		\end{minted}
+		As a function, this kinda looks like:
+		\begin{minted}[autogobble, linenos = false]{rust}
+			fn some_macro(input: Ast) -> Ast {
+				if input.is_empty() {
+					/* expansion */
+				} else {
+					do_something_with(input[0]);
+					/* expansion */
+					some_macro(input[1..])
+				}
+			}
+		\end{minted}
+	\end{frame}
+
+	\subsection{Push-down Accumulation}
+	\begin{frame}[fragile]{Push-down accumulation my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros, this was used to:\\
+			  a. Circumvent follow set ambiguity restrictions\\
+			  b. Hold parsed tokens in the translated `:tt` tree format
+		}
+		This one hasn't been shown in this presentation yet! \\
+
+		Macros have to expand to a complete syntax element. Push-down accumulation is how you can
+		allow for incomplete intermediate expansions that eventually form a complete expansion.
+		For example:
+		\begin{minted}[autogobble, highlightlines = {3}, linenos = false]{rust}
+			macro_rules! some_macro {
+				/* other rules */
+				([$name:ident $($t:ty)+]) => {
+					pub struct $name($($t),+);
+				}
+			}
+		\end{minted}
+	\end{frame}
+
+	\subsection{TT Bundling}
+	\begin{frame}[fragile]{TT bundling my beloved}
+		\pdfpcnote{
+			- In the XML parsing macros this was used to bundle together options for expansion of
+			  everything, but especially things like associated functions
+		}
+		This one hasn't shown up yet either! \\
+
+		TT bundling is a sort of special case for composition, except this time we \textit{can}
+		actually reverse it! \\
+
+		Multiple tokens $\Rightarrow$ \texttt{[]}-list (\fragspec{tt})
+
+		\inputminted[
+			autogobble,
+			highlightlines = {4, 7, 13},
+			lastline = 16,
+			linenos = false,
+		]{rust}{../tt-bundling/src/main.rs}
+	\end{frame}
+
+	\subsection{Callbacks}
+	\begin{frame}[fragile]{Callbacks my beloved}
+		\pdfpcnote{
+			- 1: In the XML parsing macros this was used to allow for macro reuse.\\
+			- 1: For instance, every `<name>` section was parsed by one macro\\
+			- 1: This allows you to have single points of failure and reduces maintenance burden\\
+			- 2: Having a call stack is what let me have dedicated parsing macros for each section:
+			  since each macro in the "stack" would jut eventually make a callback to its caller
+			  with whatever new stuff had been parsed
+			- 3: Recursion is so heavily emphasized because it's the _only_ way you can do this. The
+			  out-to-in expansion order is going to hit you hard if you try anything else.
+		}
+		Very very generally, a callback looks something like this:
+
+		\begin{minted}[autogobble, highlightlines = {2, 3}, linenos = false]{rust}
+			macro_rules! callback {
+				($callback:ident( $($args:tt)* )) => {
+					$callback!( $($args)* )
+				};
+			}
+		\end{minted}
+
+		\pause
+
+		Provided you have a consistent framework for calling your macros, these let you:
+		\begin{itemize}
+			\item Reuse one macro in multiple places
+			\item Form something like a call stack
+			\item \emph{\textbf{Recursively}} pass the expansion of one macro as input to another
+		\end{itemize}
+
+		These are great for being able to reuse one macro in multiple places.\pause{} As long as you have a consistent framework for calling your macros.
+	\end{frame}
+
+	\begin{frame}{Callbacks my beloved}
+
+	\end{frame}
+
+	\section{Debugging}
+	\begin{frame}{That's the neat part}
+		\includegraphics[width = \linewidth]{neat-part.png}
+	\end{frame}
+
+	\begin{frame}[fragile]{Kinda, at least}
+		If you're defining items outside of functions, how do you debug things? \\
+
+		\pause
+
+		What do when no \mintinline{rust}{println!}? \\
+
+		\pause
+
+		Introducing your new best friend:
+		\begin{minted}[autogobble, linenos = false, highlightlines = {1, 3}]{rust}
+			const _: &str = stringify!($token);
+			// also
+			const _: &str = concat!($(stringify($tokens)),*);
+		\end{minted}
+	\end{frame}
+
+	\begin{frame}[fragile]{Pretend println}
+		You can see some residue from me debugging things and creating examples for documentation
+		in \path{trait_xml_macro.rs}:
+		\inputminted[
+			firstline = 361,
+			lastline = 383,
+			highlightlines = {368},
+		]{rust}{../trait-xml/src/trait_xml_macro.rs}
+	\end{frame}
+
+	\begin{frame}[fragile]{No rules expected the token\dots}
+		``But Auro! My macro just plain doesn't work! I can't use \mintinline{rust}{const _}.'' \\
+
+		Yes you can.
+
+		\begin{minted}[autogobble, linenos = false, highlightlines = {4-6}]{rust}
+			macro_rules! this_fails_somehow {
+				// a bunch of rules up here...
+				// ...and then at the end:
+				($($all:tt)*) => {
+					const _: &str = concat!($(stringify!($all)),*);
+				};
+			}
+		\end{minted}
+
+		This shows you the input as a string so you can try and figure out what's going wrong. \\
+
+		It's also only matched if no other branch matches. But\dots
+		\pause
+		You still have to figure out why it's not matching.
+	\end{frame}
+
+	\begin{frame}[fragile]{No rules expected the token\dots}
+		Another thing you can do to keep \texttt{\errred{error}: no rules expected the token} from
+		coming up is by just\dots{} making rules that expect the token/those tokens. \\
+
+		\pause
+
+		My XML parsing macros do this a bunch - if you give them an invalid input, a lot of the
+		time it'll expand to a \texttt{compile\_error!}, e.g. in \texttt{lifetime.rs}:
+		\inputminted[
+			firstline = 342,
+			lastline = 354,
+			highlightlines = {354},
+		]{rust}{../trait-xml/src/lifetime.rs}
+	\end{frame}
+
+	\begin{frame}{Other things}
+		Some other suggestions to help you on your way (that sound a lot like general programming
+		advice):
+		\begin{itemize}
+			\item Use descriptive names for rules, helper tokens, and fragments
+			\item Don't worry about excessive complexity in a single rule -- just try to keep the
+				depth of recursion down if you can
+			\item Don't be afraid to make another macro, especially if it can be reused in other
+				places
+			\item If you need more steps to finish parsing, add them. Nobody needs to see all your
+				internal rules but you (:
+		\end{itemize}
+	\end{frame}
+
+	\section{That's all!}
+	\begin{frame}{Materials}
+		The materials for this talk are available on GitHub and GitLab at
+		\texttt{AuroransSolis/rustconf-2023}.
+	\end{frame}
+\end{document}

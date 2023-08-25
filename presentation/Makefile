@@ -1,13 +1,24 @@
-.PHONY: all main.pdf clean cleanall
+REQFILES=neat-part.png profile-pic.png time-1.svg time-2.svg time-3.svg
 
-all: main.pdf
+.PHONY: all conference.pdf standalone.pdf clean-conference clean-standalone cleanall
 
-main.pdf: main.tex
-	latexmk -pdf -pdflatex="lualatex --shell-escape --synctex=1 --interaction=nonstopmode" -use-make main.tex
+all: conference.pdf standalone.pdf
 
-clean:
+conference.pdf: conference.tex $(REQFILES)
+	latexmk \
+		-pdf \
+		-pdflatex="lualatex --shell-escape --synctex=1 --interaction=nonstopmode" \
+		-use-make conference.tex
+
+standalone.pdf: standalone.tex $(REQFILES)
+	latexmk \
+		-pdf \
+		-pdflatex="lualatex --shell-escape --synctex=1 --interaction=nonstopmode" \
+		-use-make standalone.tex
+
+clean-conference:
 	latexmk -CA
-	for file in main.{nav,snm,vrb}; \
+	for file in conference.{nav,snm,synctex*,vrb}; \
 	do \
 		if [ -f $$file ]; \
 		then \
@@ -15,8 +26,18 @@ clean:
 		fi; \
 	done
 
-cleanall: clean
-	for dir in _minted-main svg-inkscape; \
+clean-standalone:
+	latexmk -CA
+	for file in standalone.{nav,snm,synctex*,vrb}; \
+	do \
+		if [ -f $$file ]; \
+		then \
+			rm $$file; \
+		fi; \
+	done
+
+cleanall: clean-conference clean-standalone
+	for dir in _minted* svg-inkscape; \
 	do \
 		if [ -d $$dir ]; \
 		then \

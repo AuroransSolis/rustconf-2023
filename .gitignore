@@ -1,7 +1,7 @@
 .stfolder/
 **/target/
 **/Cargo.lock
-presentation/_minted-main
+presentation/_minted*
 presentation/*.aux
 presentation/*.bcf
 presentation/*.fdb_latexmk
