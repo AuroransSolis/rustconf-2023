@@ -1,6 +1,12 @@
 Hey, thanks for checking out my RustConf 2023 presentation materials! I really appreciate it!
 
-So, here's the what's what of this repo.
+# Corrections
+
+1. As it turns out, you can do token comparisons through use of ad-hoc comparison macros and macro
+shadowing. See [this blog post](https://auroranssolis.github.io/rust/2024/02/26/uh-oh.html) for more
+information.
+
+# Table of contents
 
 ## `all-unique`
 
